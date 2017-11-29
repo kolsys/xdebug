@@ -161,20 +161,18 @@ void xdebug_log_stack(const char *error_type_str, char *buffer, const char *erro
 	xdebug_llist_element *le;
 	function_stack_entry *i;
 	char                 *tmp_log_message;
+	xdebug_str log_buffer = XDEBUG_STR_INITIALIZER;
 
-	tmp_log_message = xdebug_sprintf( "PHP %s:  %s in %s on line %d", error_type_str, buffer, error_filename, error_lineno);
-	php_log_err(tmp_log_message TSRMLS_CC);
-	xdfree(tmp_log_message);
+	xdebug_str_add(&log_buffer, xdebug_sprintf( "PHP %s:  %s in %s on line %d", error_type_str, buffer, error_filename, error_lineno), 1);
 
 	if (XG(stack) && XG(stack)->size) {
-		php_log_err("PHP Stack trace:" TSRMLS_CC);
+		xdebug_str_addl(&log_buffer, "\nPHP Stack trace:\n", 18, 0);
 
 		for (le = XDEBUG_LLIST_HEAD(XG(stack)); le != NULL; le = XDEBUG_LLIST_NEXT(le))
 		{
 			int c = 0; /* Comma flag */
 			unsigned int j = 0; /* Counter */
 			char *tmp_name;
-			xdebug_str log_buffer = XDEBUG_STR_INITIALIZER;
 			int variadic_opened = 0;
 
 			i = XDEBUG_LLIST_VALP(le);
@@ -222,11 +220,11 @@ void xdebug_log_stack(const char *error_type_str, char *buffer, const char *erro
 				xdebug_str_add(&log_buffer, ")", 0);
 			}
 
-			xdebug_str_add(&log_buffer, xdebug_sprintf(") %s:%d", i->filename, i->lineno), 1);
-			php_log_err(log_buffer.d TSRMLS_CC);
-			xdebug_str_free(&log_buffer);
+			xdebug_str_add(&log_buffer, xdebug_sprintf(") %s:%d\n", i->filename, i->lineno), 1);
 		}
 	}
+	php_log_err(log_buffer.d TSRMLS_CC);
+	xdebug_str_free(&log_buffer);
 }
 
 void xdebug_append_error_head(xdebug_str *str, int html, char *error_type_str TSRMLS_DC)
